@@ -233,6 +233,7 @@ static void draw_search(Fl_Color col)
   BC; fl_circle(.2, -.2, .6); EC;
   fl_line_style(FL_SOLID, 1, 0);
   BC; vv(-.4, .13); vv(-1.0, .73); vv(-.73, 1.0); vv(-.13, .4); EC;
+  fl_line_style(0);
 }
 
 static void draw_arrow1(Fl_Color col)
