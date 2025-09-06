@@ -462,6 +462,30 @@ void Fl::set_boxtype(Fl_Boxtype to, Fl_Boxtype from) {
   fl_box_table[to] = fl_box_table[from];
 }
 
+static float set_int_scale(float &ratio) {
+  float scale = fl_override_scale();
+  int iscale = (int)(scale + 0.49f);
+  fl_restore_scale(iscale);
+  ratio = scale / iscale;
+  return scale;
+}
+
+static void set_orig_scale(float scale) {
+  fl_override_scale();
+  fl_restore_scale(scale);
+}
+
+static void scale_box(int &x, int &y, int &w, int &h, float scale) {
+  int x2 = x + w;
+  int y2 = y + h;
+  x = x*scale + 0.5f;
+  y = y*scale + 0.5f;
+  x2 = x2*scale + 0.5f;
+  y2 = y2*scale + 0.5f;
+  w = x2 - x;
+  h = y2 - y;
+}
+
 /**
   Draws a box using given type, position, size and color.
   \param[in] t box type
@@ -469,7 +493,11 @@ void Fl::set_boxtype(Fl_Boxtype to, Fl_Boxtype from) {
   \param[in] c color
 */
 void fl_draw_box(Fl_Boxtype t, int x, int y, int w, int h, Fl_Color c) {
-  if (t && fl_box_table[t].f) fl_box_table[t].f(x,y,w,h,c);
+  if (!t || !fl_box_table[t].f) return;
+  float r, scale = set_int_scale(r);
+  scale_box(x, y, w, h, r);
+  fl_box_table[t].f(x, y, w, h, c);
+  set_orig_scale(scale);
 }
 
 /**
@@ -482,8 +510,11 @@ void fl_draw_box(Fl_Boxtype t, int x, int y, int w, int h, Fl_Color c) {
  */
 void fl_draw_box_focus(Fl_Boxtype bt, int x, int y, int w, int h, Fl_Color fg, Fl_Color bg) {
   if (!Fl::visible_focus()) return;
+  float r, scale = set_int_scale(r);
+  scale_box(x, y, w, h, r);
   if ((bt >= 0) && (bt <= FL_MAX_BOXTYPE) && (fl_box_table[bt].ff)) {
     fl_box_table[bt].ff(bt, x, y, w, h, fg, bg);
+    set_orig_scale(scale);
     return;
   }
   switch (bt) {
@@ -505,6 +536,7 @@ void fl_draw_box_focus(Fl_Boxtype bt, int x, int y, int w, int h, Fl_Color fg, F
   fl_color(fl_contrast(fg, bg));
   fl_focus_rect(x, y, w, h);
   fl_color(savecolor);
+  set_orig_scale(scale);
 }
 
 /** Draws the widget box according its box style */
@@ -530,6 +562,6 @@ void Fl_Widget::draw_box(Fl_Boxtype t, Fl_Color c) const {
 /** Draws a box of type t, of color c at the position X,Y and size W,H. */
 void Fl_Widget::draw_box(Fl_Boxtype t, int X, int Y, int W, int H, Fl_Color c) const {
   draw_it_active = active_r();
-  fl_box_table[t].f(X, Y, W, H, c);
+  fl_draw_box(t, X, Y, W, H, c);
   draw_it_active = 1;
 }
